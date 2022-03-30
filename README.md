@@ -1,4 +1,4 @@
-# Capybara Image Segmentation with Auto-Annotation (NOT FINISHED YEAT)
+# Capybara Image Segmentation with Auto-Annotation (NOT FINISHED YET)
 
 This repo is a tutorial for training and evaluating the Tensorflow Object Detection API using [Capybara Dataset](https://github.com/freds0/capybara_dataset).
 
