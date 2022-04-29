@@ -4,6 +4,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Install apt dependencies
 RUN apt-get update && apt-get install -y \
+    libgl1 \
     protobuf-compiler \
     python3-pip \
     python3-pil \
@@ -17,7 +18,7 @@ RUN apt-get install -y \
 
 RUN python -m pip install -U pip
 
-RUN pip install jupyter matplotlib pascal_voc_writer
+RUN pip install jupyter matplotlib pyyaml==5.4.1 
 
 RUN git clone https://github.com/tensorflow/models.git /tensorflow/models
 
