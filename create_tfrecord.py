@@ -13,9 +13,7 @@
 # ==============================================================================
 
 r"""Convert raw COCO dataset to TFRecord for object_detection.
-
 Please note that this tool creates sharded output files.
-
 Example usage:
     python create_coco_tf_record.py --logtostderr \
       --train_image_dir="${TRAIN_IMAGE_DIR}" \
@@ -59,7 +57,6 @@ def create_tf_example(image,
                       category_index,
                       include_masks=False):
   """Converts image and annotations to a tf.Example proto.
-
   Args:
     image: dict with keys:
       [u'license', u'file_name', u'coco_url', u'height', u'width',
@@ -83,7 +80,6 @@ def create_tf_example(image,
   Returns:
     example: The converted tf.Example
     num_annotations_skipped: Number of (invalid) annotations that were ignored.
-
   Raises:
     ValueError: if the image pointed to by data['filename'] is not a valid JPEG
   """
@@ -177,7 +173,6 @@ def create_tf_example(image,
 def create_tf_record_from_coco_annotations(
     annotations_file, image_dir, output_path, include_masks):
   """Loads COCO annotation json files and converts to tf.Record format.
-
   Args:
     annotations_file: JSON file containing bounding box annotations.
     image_dir: Directory containing the image files.
@@ -252,7 +247,6 @@ if __name__ == "__main__":
     train_images_dir = join(args.base_dir, args.images_train_dir) if args.images_train_dir else config_train_images_dir
     train_output_path = join(args.base_dir, args.output_train_tfrecord) if args.output_train_tfrecord else config['pipeline_config']['train_record_path']
 
-    #create_tf_record(train_csv_filepath, train_images_dir, train_output_path, labels_list)
     create_tf_record_from_coco_annotations(
         train_csv_filepath, train_images_dir, train_output_path, True)
 
@@ -261,6 +255,7 @@ if __name__ == "__main__":
         test_images_dir = join(args.base_dir, args.images_test_dir) if args.images_test_dir else config['pipeline_config']['input_test_img_folder']
         test_output_path = join(args.base_dir, args.output_test_tfrecord) if args.output_test_tfrecord else config['pipeline_config']['test_record_path']
 
-        #create_tf_record(test_csv_filepath, test_images_dir, test_output_path, labels_list)
         create_tf_record_from_coco_annotations(
             test_csv_filepath, test_images_dir, test_output_path, True)
+
+

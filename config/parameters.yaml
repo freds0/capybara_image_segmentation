@@ -16,6 +16,6 @@ pipeline_config:
     pipeline_config_filepath: "data/pipeline_mask_rcnn_inception_resnet_v2_1024x1024.config"
     # Training
     num_train_steps: 10000
-    checkpoint_every_n: 10000
+    checkpoint_every_n: 1000
     batch_size: 1 # 75 for 15G GPU
     use_data_aug: false # True or False

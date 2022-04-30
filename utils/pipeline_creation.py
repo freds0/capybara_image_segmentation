@@ -6,6 +6,7 @@ import wget
 import tarfile
 import re
 from os.path import join, exists, basename
+import shutil
 import tempfile
 
 zoo = utils.models_zoo.zoo()
@@ -69,42 +70,6 @@ class model_config:
         targz_filename = self.__download_model()
         return self.__unzip_model(targz_filename)
 
-    def __regular_expression_pipeline_config(self, pipeline_config, output_pipeline_config):
-        # Read model's config file
-        with open(pipeline_config) as f:
-            config_content = f.read()
-
-        # Set labelmap path
-        config_content = re.sub('label_map_path: ".*?"',
-                        'label_map_path: "{}"'.format(self.labelmap_path), config_content)
-
-        # Set fine_tune_checkpoint path
-        config_content = re.sub('fine_tune_checkpoint: ".*?"',
-                        'fine_tune_checkpoint: "{}"'.format(self.__get_finetune_checkpoint()), config_content)
-
-        # Set train tf-record file path
-        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED/train)(.*?")',
-                        'input_path: "{}"'.format(self.train_record_path), config_content)
-
-        # Set test tf-record file path
-        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED/val)(.*?")',
-                        'input_path: "{}"'.format(self.test_record_path), config_content)
-
-        # Set number of classes.
-        config_content = re.sub('num_classes: \d+',
-                        'num_classes: {}'.format(self.num_classes), config_content)
-
-        # Set batch size
-        config_content = re.sub('batch_size: [0-9]+',
-                        'batch_size: {}'.format(self.batch_size), config_content)
-
-        # Set fine-tune checkpoint type to detection
-        config_content = re.sub('fine_tune_checkpoint_type: "classification"',
-                        'fine_tune_checkpoint_type: "{}"'.format('detection'), config_content)
-
-        with open(output_pipeline_config, 'w') as f:
-            f.write(config_content)
-
     def __dynamic_pipeline_config(self, config_path):
         '''
         Source: https://stackoverflow.com/questions/55323907/dynamically-editing-pipeline-config-for-tensorflow-object-detection
@@ -123,15 +88,67 @@ class model_config:
         # Copy from temp dir to final folder
         copy(join(self.temp_dir.name, 'pipeline.config'), self.output_filepath)
 
+    def __regular_expression_pipeline_config(self, pipeline_config, output_pipeline_config):
+        # Read model's config file
+        with open(pipeline_config) as f:
+            config_content = f.read()
+
+        # Set labelmap path
+        config_content = re.sub('label_map_path: ".*?"',
+                        'label_map_path: "{}"'.format(self.labelmap_path), config_content)
+
+        # Set fine_tune_checkpoint path
+        config_content = re.sub('fine_tune_checkpoint: ".*?"',
+                        'fine_tune_checkpoint: "{}"'.format(self.__get_finetune_checkpoint()), config_content)
+
+        # Set train tf-record file path
+        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED)(.*?")',
+                        'input_path: "{}"'.format(self.train_record_path), config_content)
+
+        # Set test tf-record file path
+        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED_TEST")(.*?")',
+                        'input_path: "{}"'.format(self.test_record_path), config_content)
+
+        # Set number of classes.
+        config_content = re.sub('num_classes: \d+',
+                        'num_classes: {}'.format(self.num_classes), config_content)
+
+        # Set batch size
+        config_content = re.sub('batch_size: [0-9]+',
+                        'batch_size: {}'.format(self.batch_size), config_content)
+
+        # Set fine-tune checkpoint type to detection
+        config_content = re.sub('fine_tune_checkpoint_type: "classification"',
+                        'fine_tune_checkpoint_type: "{}"'.format('detection'), config_content)
+
+        with open(output_pipeline_config, 'w') as f:
+            f.write(config_content)
+
+    def temporary_correction(self, input_pipeline_config, output_pipeline_config):
+        w = open(output_pipeline_config, 'w')
+        # correction in the original file
+        with open(input_pipeline_config) as f:
+            contents = f.readlines()
+
+        for line in contents:
+            line = line.replace('input_path: "PATH_TO_BE_CONFIGURED"s', 'input_path: "PATH_TO_BE_CONFIGURED_TEST"')
+            w.write(line)
+        w.close()
+
+
     def create_pipeline_config(self):
         # Download and unzip model data
         self.__download_and_unzip_model()
         # Create pipeline file
         input_pipeline_config = join(self.__get_folder_model(), 'pipeline.config')
-        #temp_pipeline_config = join(self.temp_dir.name, 'pipeline.config')
-        self.__regular_expression_pipeline_config(input_pipeline_config, self.output_filepath)
-        #self.__dynamic_pipeline_config(temp_pipeline_config)
+
+        corrected_pipeline_config = join(self.__get_folder_model(), 'pipeline_with_correction.config')
+        self.temporary_correction(input_pipeline_config, corrected_pipeline_config)
+
+        temp_pipeline_config = join(self.temp_dir.name, 'pipeline.config')
+        self.__regular_expression_pipeline_config(corrected_pipeline_config, temp_pipeline_config)
+        self.__dynamic_pipeline_config(temp_pipeline_config)
         # Clear temp dir
-        #self.temp_dir.cleanup()
+        self.temp_dir.cleanup()
 
         return self.output_filepath
