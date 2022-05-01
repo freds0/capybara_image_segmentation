@@ -217,6 +217,7 @@ def create_tf_record_from_coco_annotations(
     tf.logging.info('Finished writing, skipped %d annotations.',
                     total_num_annotations_skipped)
 
+    print('Successfully created the TFRecords: {}'.format(output_path))
 
 if __name__ == "__main__":
 

@@ -89,6 +89,7 @@ class model_config:
         copy(join(self.temp_dir.name, 'pipeline.config'), self.output_filepath)
 
     def __regular_expression_pipeline_config(self, pipeline_config, output_pipeline_config):
+
         # Read model's config file
         with open(pipeline_config) as f:
             config_content = f.read()
@@ -101,13 +102,13 @@ class model_config:
         config_content = re.sub('fine_tune_checkpoint: ".*?"',
                         'fine_tune_checkpoint: "{}"'.format(self.__get_finetune_checkpoint()), config_content)
 
-        # Set train tf-record file path
-        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED)(.*?")',
-                        'input_path: "{}"'.format(self.train_record_path), config_content)
-
         # Set test tf-record file path
-        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED_TEST")(.*?")',
+        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED_TEST)(.*?")',
                         'input_path: "{}"'.format(self.test_record_path), config_content)
+
+        # Set train tf-record file path
+        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED_TRAIN)(.*?")',
+                        'input_path: "{}"'.format(self.train_record_path), config_content)
 
         # Set number of classes.
         config_content = re.sub('num_classes: \d+',
@@ -124,7 +125,7 @@ class model_config:
         with open(output_pipeline_config, 'w') as f:
             f.write(config_content)
 
-    def temporary_correction(self, input_pipeline_config, output_pipeline_config):
+    def __temporary_correction(self, input_pipeline_config, output_pipeline_config):
         w = open(output_pipeline_config, 'w')
         # correction in the original file
         with open(input_pipeline_config) as f:
@@ -132,6 +133,7 @@ class model_config:
 
         for line in contents:
             line = line.replace('input_path: "PATH_TO_BE_CONFIGURED"s', 'input_path: "PATH_TO_BE_CONFIGURED_TEST"')
+            line = line.replace('input_path: "PATH_TO_BE_CONFIGURED"', 'input_path: "PATH_TO_BE_CONFIGURED_TRAIN"')
             w.write(line)
         w.close()
 
@@ -141,13 +143,12 @@ class model_config:
         self.__download_and_unzip_model()
         # Create pipeline file
         input_pipeline_config = join(self.__get_folder_model(), 'pipeline.config')
-
         corrected_pipeline_config = join(self.__get_folder_model(), 'pipeline_with_correction.config')
-        self.temporary_correction(input_pipeline_config, corrected_pipeline_config)
-
-        temp_pipeline_config = join(self.temp_dir.name, 'pipeline.config')
-        self.__regular_expression_pipeline_config(corrected_pipeline_config, temp_pipeline_config)
-        self.__dynamic_pipeline_config(temp_pipeline_config)
+        self.__temporary_correction(input_pipeline_config, corrected_pipeline_config)
+        print('self.output_filepath: {}'.format(self.output_filepath))
+        #temp_pipeline_config = join(self.temp_dir.name, 'pipeline.config')
+        self.__regular_expression_pipeline_config(corrected_pipeline_config, self.output_filepath)
+        #self.__dynamic_pipeline_config(temp_pipeline_config)
         # Clear temp dir
         self.temp_dir.cleanup()
 
