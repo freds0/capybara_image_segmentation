@@ -70,6 +70,12 @@ class model_config:
         targz_filename = self.__download_model()
         return self.__unzip_model(targz_filename)
 
+    def __download_pipeline_config(self):
+        file_url = 'https://raw.githubusercontent.com/tensorflow/models/master/research/object_detection/configs/tf2/mask_rcnn_inception_resnet_v2_1024x1024_coco17_gpu-8.config'
+        pipeline_output = join(self.data_dir, 'pipeline.config')
+        filename = wget.download(file_url, out=pipeline_output)
+        return filename
+
     def __dynamic_pipeline_config(self, config_path):
         '''
         Source: https://stackoverflow.com/questions/55323907/dynamically-editing-pipeline-config-for-tensorflow-object-detection
@@ -103,11 +109,11 @@ class model_config:
                         'fine_tune_checkpoint: "{}"'.format(self.__get_finetune_checkpoint()), config_content)
 
         # Set test tf-record file path
-        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED_TEST)(.*?")',
+        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED/val)(.*?")',
                         'input_path: "{}"'.format(self.test_record_path), config_content)
 
         # Set train tf-record file path
-        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED_TRAIN)(.*?")',
+        config_content = re.sub('(input_path: ".*?)(PATH_TO_BE_CONFIGURED/train)(.*?")',
                         'input_path: "{}"'.format(self.train_record_path), config_content)
 
         # Set number of classes.
@@ -125,6 +131,7 @@ class model_config:
         with open(output_pipeline_config, 'w') as f:
             f.write(config_content)
 
+    '''
     def __temporary_correction(self, input_pipeline_config, output_pipeline_config):
         w = open(output_pipeline_config, 'w')
         # correction in the original file
@@ -136,18 +143,25 @@ class model_config:
             line = line.replace('input_path: "PATH_TO_BE_CONFIGURED"', 'input_path: "PATH_TO_BE_CONFIGURED_TRAIN"')
             w.write(line)
         w.close()
-
+    '''
 
     def create_pipeline_config(self):
         # Download and unzip model data
         self.__download_and_unzip_model()
+
+
+        self.__download_pipeline_config()
+
         # Create pipeline file
-        input_pipeline_config = join(self.__get_folder_model(), 'pipeline.config')
-        corrected_pipeline_config = join(self.__get_folder_model(), 'pipeline_with_correction.config')
-        self.__temporary_correction(input_pipeline_config, corrected_pipeline_config)
-        print('self.output_filepath: {}'.format(self.output_filepath))
+        input_pipeline_config = join(self.data_dir, 'pipeline.config')
+
+        # Create pipeline file
+        #input_pipeline_config = join(self.__get_folder_model(), 'pipeline.config')
+        #corrected_pipeline_config = join(self.__get_folder_model(), 'pipeline_with_correction.config')
+        #self.__temporary_correction(input_pipeline_config, corrected_pipeline_config)
+
         #temp_pipeline_config = join(self.temp_dir.name, 'pipeline.config')
-        self.__regular_expression_pipeline_config(corrected_pipeline_config, self.output_filepath)
+        self.__regular_expression_pipeline_config(input_pipeline_config, self.output_filepath)
         #self.__dynamic_pipeline_config(temp_pipeline_config)
         # Clear temp dir
         self.temp_dir.cleanup()
